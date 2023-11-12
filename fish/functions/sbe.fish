@@ -1,3 +1,3 @@
 function sbe
-  ./dockerStartPersistent.sh --logger-class=gunicorn_color.Logger
+  ./dockerStartPersistent.sh --log-level=INFO
 end

@@ -19,5 +19,3 @@ source ~/.iterm2_shell_integration.fish
 
 load_nvm > /dev/stderr
 
-
-set -g tide_right_prompt_items status cmd_duration context jobs direnv virtual_env rustc java php pulumi chruby go distrobox toolbox terraform aws nix_shell crystal elixir
