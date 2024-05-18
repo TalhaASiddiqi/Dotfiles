@@ -8,8 +8,35 @@ local highlight = {
   "RainbowCyan",
 }
 return {
+  {
+    "hrsh7th/nvim-cmp",
+    dependencies = {
+      { "onsails/lspkind.nvim" },
+    },
+    opts = function(_, opts)
+      local lspkind = require "lspkind"
+      opts.formatting.fields = {
+        "abbr",
+        "kind",
+        "menu",
+      }
+      opts.formatting.format = lspkind.cmp_format {
+        mode = "symbol",
+        maxwidth = 50,
+        menu = {
+          buffer = "[Buffer]",
+          nvim_lsp = "[LSP]",
+          luasnip = "[LuaSnip]",
+          nvim_lua = "[Lua]",
+          latex_symbols = "[Latex]",
+        },
+      }
+
+      return opts
+    end,
+  },
   { "mason.nvim", opts = { PATH = "append" } },
-  { "lbrayner/vim-rzip", event = "BufEnter" },
+  -- { "lbrayner/vim-rzip", event = "BufEnter" },
   {
     "ggandor/leap.nvim",
     lazy = false,
@@ -19,7 +46,7 @@ return {
     "creativenull/efmls-configs-nvim",
     dependencies = { "neovim/nvim-lspconfig" },
   },
-  { "null-ls.nvim", enabled = false },
+  { "none-ls.nvim", enabled = false },
   {
     "sindrets/diffview.nvim",
     lazy = false,
@@ -43,12 +70,20 @@ return {
     opts = {
       transparent_background = true,
       integrations = {
+        cmp = true,
         indent_blankline = {
           enabled = true,
           colored_indent_levels = true,
         },
+        treesitter = true,
+        treesitter_context = true,
         rainbow_delimiters = true,
       },
+      custom_highlights = function(colors)
+        return {
+          CmpBorder = { fg = colors.lavender, bg = colors.levender },
+        }
+      end,
     },
   },
   { "github/copilot.vim", event = "InsertEnter", cmd = "Copilot" },
@@ -66,5 +101,28 @@ return {
       indent = { char = "▏" },
       scope = { char = "▎", highlight = highlight },
     },
+  },
+  {
+    "ray-x/lsp_signature.nvim",
+    opts = {
+      floating_window = true,
+      hint_enable = false,
+    },
+    config = function(_, opts) require("lsp_signature").setup(opts) end,
+    event = "VeryLazy",
+  },
+  {
+    "nvim-treesitter/nvim-treesitter-context",
+    event = "VeryLazy",
+    opts = {
+      mods = "topline",
+      max_lines = 5,
+    },
+    config = function(_, opts)
+      local theme = require("catppuccin.palettes").get_palette "mocha"
+      vim.api.nvim_set_hl(0, "TreesitterContext", { bg = theme.surface0 })
+      require("treesitter-context").setup(opts)
+    end,
+    dependencies = { "nvim-treesitter/nvim-treesitter", "catppuccin/nvim" },
   },
 }
