@@ -39,6 +39,7 @@ return {
   -- { "lbrayner/vim-rzip", event = "BufEnter" },
   {
     "ggandor/leap.nvim",
+    enabled = false,
     lazy = false,
     config = function() require("leap").add_default_mappings() end,
   },
@@ -86,7 +87,7 @@ return {
       end,
     },
   },
-  { "github/copilot.vim", event = "InsertEnter", cmd = "Copilot" },
+  -- { "github/copilot.vim", event = "InsertEnter", cmd = "Copilot" },
   {
     "HiPhish/rainbow-delimiters.nvim",
     event = "BufEnter",

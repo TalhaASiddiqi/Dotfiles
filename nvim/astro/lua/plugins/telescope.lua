@@ -1,29 +1,39 @@
-local ts_select_dir_for_grep = function(prompt_bufnr)
+local ts_select_dir_for_grep = function(cb)
+  return function(prompt_bufnr)
+    local action_state = require "telescope.actions.state"
+    local fb = require("telescope").extensions.file_browser
+    local current_line = action_state.get_current_line()
+
+    fb.file_browser {
+      files = false,
+      depth = false,
+      attach_mappings = function(prompt_bufnr)
+        require("telescope.actions").select_default:replace(function()
+          local entry_path = action_state.get_selected_entry().Path
+          local dir = entry_path:is_dir() and entry_path or entry_path:parent()
+          local relative = dir:make_relative(vim.fn.getcwd())
+          local absolute = dir:absolute()
+
+          cb {
+            results_title = relative .. "/",
+            cwd = absolute,
+            default_text = current_line,
+          }
+        end)
+
+        return true
+      end,
+    }
+  end
+end
+
+local add_harpoon_daddy = function()
   local action_state = require "telescope.actions.state"
-  local fb = require("telescope").extensions.file_browser
-  local live_grep = require("telescope.builtin").live_grep
-  local current_line = action_state.get_current_line()
+  local current_line = action_state.get_selected_entry()
 
-  fb.file_browser {
-    files = false,
-    depth = false,
-    attach_mappings = function(prompt_bufnr)
-      require("telescope.actions").select_default:replace(function()
-        local entry_path = action_state.get_selected_entry().Path
-        local dir = entry_path:is_dir() and entry_path or entry_path:parent()
-        local relative = dir:make_relative(vim.fn.getcwd())
-        local absolute = dir:absolute()
-
-        live_grep {
-          results_title = relative .. "/",
-          cwd = absolute,
-          default_text = current_line,
-        }
-      end)
-
-      return true
-    end,
-  }
+  local harpoon = require "harpoon.mark"
+  local entry_path = vim.fn.fnamemodify(current_line[1], ":p")
+  harpoon.add_file(entry_path)
 end
 
 return {
@@ -32,21 +42,85 @@ return {
     dependencies = {
       { "prochri/telescope-all-recent.nvim", dependencies = { "kkharji/sqlite.lua" }, config = function() end },
       { "nvim-telescope/telescope-file-browser.nvim" },
+      {
+        "nvim-telescope/telescope-live-grep-args.nvim",
+        -- This will not install any breaking changes.
+        -- For major updates, this must be adjusted manually.
+        version = "^1.0.0",
+      },
     },
     config = function(plugin, opts)
+      local lga_actions = require "telescope-live-grep-args.actions"
+      local live_grep = require("telescope.builtin").live_grep
+      local grep_string = require("telescope.builtin").grep_string
+
+      local mappings = {
+        all_pickers = {
+          ["<C-h>"] = add_harpoon_daddy,
+        },
+        grep_string = {
+          ["<C-f>"] = ts_select_dir_for_grep(grep_string),
+        },
+        live_grep = {
+          ["<C-f>"] = ts_select_dir_for_grep(live_grep),
+        },
+      }
+      local pickers = {
+        "find_files",
+        "live_grep",
+        "grep_string",
+      }
+      local modes = {
+        "n",
+        "i",
+      }
+
+      local picker_settings = {}
+
+      for _, picker in pairs(pickers) do
+        local current_picker = {}
+        for _, mode in pairs(modes) do
+          -- First add all the global mappings
+          local current_mode = vim.tbl_extend("error", {}, mappings.all_pickers)
+
+          if mappings[picker] ~= nil then
+            -- Then add any mode specific mappings
+            if mappings[picker][mode] ~= nil then
+              current_mode = vim.tbl_extend("error", current_mode, mappings[picker][mode])
+              mappings[picker][mode] = nil
+            end
+
+            -- finally add mappings for all modes
+            current_mode = vim.tbl_extend("error", current_mode, mappings[picker])
+          end
+
+          current_picker[mode] = current_mode
+        end
+        picker_settings[picker] = { mappings = current_picker }
+      end
+
       local custom_opts = {
-        pickers = {
-          live_grep = {
+        extensions = {
+          live_grep_args = {
+            auto_quoting = true,
             mappings = {
               i = {
-                ["<C-f>"] = ts_select_dir_for_grep,
+                ["<C-k>"] = lga_actions.quote_prompt(),
+                ["<C-i>"] = lga_actions.quote_prompt { postfix = " --iglob " },
+                ["<C-space>"] = lga_actions.to_fuzzy_refine,
+                ["<C-f>"] = function()
+                  ts_select_dir_for_grep(require("telescope").extensions.live_grep_args.live_grep_args)()
+                end,
               },
               n = {
-                ["<C-f>"] = ts_select_dir_for_grep,
+                ["<C-f>"] = function()
+                  ts_select_dir_for_grep(require("telescope").extensions.live_grep_args.live_grep_args)()
+                end,
               },
             },
           },
         },
+        pickers = vim.tbl_deep_extend("error", {}, picker_settings),
         defaults = {
           preview = {
             filetype_hook = function(filepath, bufnr, opts)
@@ -90,6 +164,7 @@ return {
       require "astronvim.plugins.configs.telescope"(plugin, vim.tbl_deep_extend("force", opts, custom_opts))
       require("telescope").load_extension "file_browser"
       require("telescope-all-recent").setup {}
+      require("telescope").load_extension "live_grep_args"
     end,
   },
 }
