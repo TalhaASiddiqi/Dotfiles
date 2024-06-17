@@ -1,8 +1,3 @@
-### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
-set --export --prepend PATH "/Users/Talha/.rd/bin"
-### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
-
-
 set --export OBJC_DISABLE_INITIALIZE_FORK_SAFETY "YES"
 
 # The next line updates PATH for the Google Cloud SDK.
@@ -17,5 +12,12 @@ end
 
 source ~/.iterm2_shell_integration.fish
 
+# fish_config theme save "Catppuccin Mocha"
 load_nvm > /dev/stderr
+fish_add_path --path /opt/homebrew/bin 
+fish_add_path --path /opt/homebrew/opt/openjdk/bin
 
+set --export CPPFLAGS -I/opt/homebrew/opt/openjdk/include
+set --export JAVA_HOME /opt/homebrew/opt/openjdk
+
+zoxide init fish | source

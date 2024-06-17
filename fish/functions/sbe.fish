@@ -1,3 +1,3 @@
 function sbe
-  ./dockerStartPersistent.sh --log-level=INFO
+  ./dockerStartPersistent.sh --log-level=INFO -c
 end
