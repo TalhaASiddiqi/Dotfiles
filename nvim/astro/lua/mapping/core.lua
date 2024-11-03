@@ -1,10 +1,7 @@
 local mappings = {
   n = {
-
     ["<Leader>fg"] = {
-      function()
-        require('telescope').extensions.live_grep_args.live_grep_args()
-      end
+      function() require("telescope").extensions.live_grep_args.live_grep_args() end,
     },
     ["<C-d>"] = {
       "<C-d>zz",
@@ -59,6 +56,5 @@ local mappings = {
     },
   },
 }
-
 
 return mappings

@@ -21,3 +21,10 @@ set --export CPPFLAGS -I/opt/homebrew/opt/openjdk/include
 set --export JAVA_HOME /opt/homebrew/opt/openjdk
 
 zoxide init fish | source
+
+# pnpm
+set -gx PNPM_HOME "/Users/talha/Library/pnpm"
+if not string match -q -- $PNPM_HOME $PATH
+  set -gx PATH "$PNPM_HOME" $PATH
+end
+# pnpm end

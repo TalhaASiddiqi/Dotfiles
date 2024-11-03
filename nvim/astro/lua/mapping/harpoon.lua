@@ -1,16 +1,16 @@
 local mappings = {
-  -- Harpoon (by PrimeDaddy)
-  ["<Leader>h"] = {
-    function() end,
-    name = "Harpoon",
-    desc = "Harpoon",
-  },
+  -- ["<Leader>h"] = {
+  --   name = "Harpoon",
+  -- },
   ["<Leader>hh"] = {
-    function() require("harpoon.mark").add_file() end,
+    function() require("harpoon"):list():add() end,
     desc = "Add harpoon mark",
   },
   ["<Leader>hg"] = {
-    function() require("harpoon.ui").toggle_quick_menu() end,
+    function()
+      local harpoon = require "harpoon"
+      harpoon.ui:toggle_quick_menu(harpoon:list())
+    end,
     desc = "Toggle harpoon quick menu",
   },
 }

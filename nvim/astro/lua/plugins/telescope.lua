@@ -31,16 +31,16 @@ local add_harpoon_daddy = function()
   local action_state = require "telescope.actions.state"
   local current_line = action_state.get_selected_entry()
 
-  local harpoon = require "harpoon.mark"
+  local harpoon = require "harpoon"
   local entry_path = vim.fn.fnamemodify(current_line[1], ":p")
-  harpoon.add_file(entry_path)
+  harpoon:list():add { value = entry_path }
 end
 
 return {
   {
     "nvim-telescope/telescope.nvim",
     dependencies = {
-      { "prochri/telescope-all-recent.nvim", dependencies = { "kkharji/sqlite.lua" }, config = function() end },
+      { "prochri/telescope-all-recent.nvim",         dependencies = { "kkharji/sqlite.lua" }, config = function() end },
       { "nvim-telescope/telescope-file-browser.nvim" },
       {
         "nvim-telescope/telescope-live-grep-args.nvim",
@@ -120,7 +120,7 @@ return {
             },
           },
         },
-        pickers = vim.tbl_deep_extend("error", {}, picker_settings),
+        pickers = picker_settings,
         defaults = {
           preview = {
             filetype_hook = function(filepath, bufnr, opts)
@@ -161,7 +161,7 @@ return {
         },
       }
 
-      require "astronvim.plugins.configs.telescope"(plugin, vim.tbl_deep_extend("force", opts, custom_opts))
+      require "astronvim.plugins.configs.telescope" (plugin, vim.tbl_deep_extend("force", opts, custom_opts))
       require("telescope").load_extension "file_browser"
       require("telescope-all-recent").setup {}
       require("telescope").load_extension "live_grep_args"

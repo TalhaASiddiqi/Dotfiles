@@ -1,10 +1,20 @@
-
 -- NOTE: We highly recommend setting up the Lua Language Server (`:LspInstall lua_ls`)
 --       as this provides autocomplete and documentation while editing
+
+local util = require "lspconfig/util"
+
+local function find_workspace_folder(root_files, fname)
+  vim.print "here"
+  vim.print(vim.api.nvim_buf_get_name(0))
+  return util.root_pattern(unpack(root_files))(fname) or util.find_git_ancestor(fname) or util.path.dirname(fname)
+end
 
 ---@type LazySpec
 return {
   "AstroNvim/astrolsp",
+  -- dependencies = {
+  --   { "yioneko/nvim-vtsls" },
+  -- },
   ---@type AstroLSPOpts
   opts = {
     -- Configuration table of features provided by AstroLSP
@@ -21,13 +31,22 @@ return {
         enabled = true, -- enable or disable format on save globally
         allow_filetypes = { -- enable format on save for specified filetypes only
           -- "go",
+          "typescript",
+          "typescriptreact",
+          "python",
+          "scss",
+          "lua",
         },
-        ignore_filetypes = { -- disable format on save for specified filetypes
-          -- "python",
-        },
+        -- ignore_filetypes = { -- disable format on save for specified filetypes
+        --   -- "python",
+        -- },
       },
       disabled = {
-        "pylsp", "tsserver", "basedpyright"
+        "pylsp",
+        "tsserver",
+        "ts_ls",
+        "vtsls",
+        "basedpyright",
       },
       timeout_ms = 5000, -- default format timeout
       -- filter = function(client) -- fully override the default formatting function
@@ -41,8 +60,24 @@ return {
     -- customize language server configuration options passed to `lspconfig`
     ---@diagnostic disable: missing-fields
     config = {
-      basedpyright = {
+      pylsp = {
         settings = {
+          pylsp = {
+            plugins = {
+              pycodestyle = {
+                enabled = false,
+              },
+            },
+          },
+        },
+      },
+      basedpyright = {
+        root_dir = util.root_pattern("requirements.txt", ".git"),
+        settings = {
+          python = {
+            venvPath = "/Users/talha/educative",
+            venv = "backendvenv",
+          },
           basedpyright = {
             typeCheckingMode = "basic",
             autoSearchPaths = true,
@@ -50,65 +85,21 @@ return {
             diagnosticMode = "openFilesOnly",
           },
         },
-      }
+      },
+      somesass_ls = {
+        root_dir = util.root_pattern("package.json", ".git"),
+        settings = {
+          somesass = {
+            loadPaths = {
+              "styles",
+              "styles/scss",
+            },
+          },
+        },
+      },
     },
     -- customize how language servers are attached
     handlers = {
-      efm = function(opts)
-        local isort = require "efmls-configs.formatters.isort"
-        local pylint = require "efmls-configs.linters.pylint"
-        local black = require "efmls-configs.formatters.black"
-        local eslint = require "efmls-configs.linters.eslint_d"
-        local stylua = require "efmls-configs.formatters.stylua"
-        local prettier = require "efmls-configs.formatters.prettier"
-        prettier.formatCommand = "yarn prettier --stdin --stdin-filepath '${INPUT}' ${--range-start:charStart} "
-          .. "${--range-end:charEnd} ${--tab-width:tabSize} ${--use-tabs:!insertSpaces}"
-        pylint = vim.tbl_extend("force", pylint, {
-          lintCommand = "pylint --output-format text --score no --msg-template {path}:{line}:{column}:{C}:{msg} ${INPUT}",
-          lintFormats = { "%f:%l:%c:%t:%m" },
-          lintOffsetColumns = 1,
-          lintCategoryMap = {
-            I = "H",
-            R = "I",
-            C = "I",
-            W = "W",
-            E = "E",
-            F = "E",
-          },
-          lintIgnoreExitCode = true,
-        })
-
-        local languages = {
-          -- javascript = { eslint, prettier },
-          -- javascriptreact = { eslint, prettier },
-          typescript = { eslint, prettier },
-          typescriptreact = { eslint, prettier },
-          lua = { stylua },
-          python = { isort, black, pylint },
-        }
-
-        local efmls_config = {
-          filetypes = vim.tbl_keys(languages),
-          settings = { rootMarkers = { ".git/" }, languages = languages },
-          root_dir = require("lspconfig.util").root_pattern("tsconfig.json", "yarn.lock", "package.json", ".git"),
-          init_options = {
-            documentFormatting = true,
-            documentRangeFormatting = true,
-            codeAction = true,
-          },
-        }
-        -- print(vim.inspect(opts))
-        require("lspconfig").efm.setup(vim.tbl_extend("force", efmls_config, {
-          on_attach = require("astrolsp").on_attach,
-          cmd = {
-            "efm-langserver",
-            -- "-loglevel",
-            -- "10",
-            -- "-logfile",
-            -- "/Users/talha/Desktop/efm.log",
-          },
-        }))
-      end,
       -- a function without a key is simply the default handler, functions take two parameters, the server name and the configured options table for that server
       -- function(server, opts) require("lspconfig")[server].setup(opts) end
 
@@ -145,17 +136,18 @@ return {
     mappings = {
       n = {
         gl = { function() vim.diagnostic.open_float() end, desc = "Hover diagnostics" },
+        ["<Leader>lR"] = { function() require("telescope.builtin").lsp_references() end, desc = "Get references" },
         -- a `cond` key can provided as the string of a server capability to be required to attach, or a function with `client` and `bufnr` parameters from the `on_attach` that returns a boolean
         -- gD = {
         --   function() vim.lsp.buf.declaration() end,
         --   desc = "Declaration of current symbol",
         --   cond = "textDocument/declaration",
         -- },
-        -- ["<Leader>uY"] = {
-        --   function() require("astrolsp.toggles").buffer_semantic_tokens() end,
-        --   desc = "Toggle LSP semantic highlight (buffer)",
-        --   cond = function(client) return client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens end,
-        -- },
+        ["<Leader>uY"] = {
+          function() require("astrolsp.toggles").buffer_semantic_tokens() end,
+          desc = "Toggle LSP semantic highlight (buffer)",
+          cond = function(client) return client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens end,
+        },
       },
     },
     -- A custom `on_attach` function to be run after the default `on_attach` function

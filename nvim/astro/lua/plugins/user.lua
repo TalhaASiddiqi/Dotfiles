@@ -47,7 +47,6 @@ return {
     "creativenull/efmls-configs-nvim",
     dependencies = { "neovim/nvim-lspconfig" },
   },
-  { "none-ls.nvim", enabled = false },
   {
     "sindrets/diffview.nvim",
     lazy = false,
